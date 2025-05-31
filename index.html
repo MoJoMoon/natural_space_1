@@ -182,7 +182,7 @@
         <div class="section-title">🌿 Natural Features:</div>
         • <span class="feature-highlight">Flowing Stream</span>: Follow the water through the landscape<br>
         • <span class="feature-highlight">Dynamic Clouds</span>: Watch clouds drift across the sky<br>
-        • <span class="feature-highlight">Wildlife</span>: Spot the rabbit hopping around<br>
+        • <span class="feature-highlight">Wildlife</span>: Watch the boy and girl turtles exploring<br>
         • <span class="feature-highlight">Nature Sounds</span>: Water, wind, and bird songs
     </div>
 
@@ -258,7 +258,7 @@
                 createStream();
                 createClouds();
                 createTrees();
-                createRabbit();
+                createTurtles();
                 createAtmosphericParticles();
                 
                 // Setup VR controllers
@@ -563,71 +563,168 @@
             }
         }
         
-        function createRabbit() {
-            const rabbitGroup = new THREE.Group();
+        function createTurtles() {
+            // Create boy turtle
+            boyTurtle = createTurtle(5, 0, 5, true); // true for boy
+            scene.add(boyTurtle);
             
-            // Rabbit body
-            const body = new THREE.Mesh(
-                new THREE.SphereGeometry(0.4, 8, 6).scale(1, 0.8, 1.3),
-                new THREE.MeshLambertMaterial({ color: 0xf0f0f0 })
+            // Create girl turtle
+            girlTurtle = createTurtle(-8, 0, -3, false); // false for girl
+            scene.add(girlTurtle);
+        }
+        
+        function createTurtle(x, y, z, isBoy) {
+            const turtleGroup = new THREE.Group();
+            
+            // Turtle shell (main body)
+            const shell = new THREE.Mesh(
+                new THREE.SphereGeometry(0.6, 8, 6).scale(1, 0.6, 1.2),
+                new THREE.MeshLambertMaterial({ 
+                    color: isBoy ? 0x228b22 : 0x8fbc8f // Dark green for boy, lighter green for girl
+                })
             );
-            body.position.y = 0.4;
-            body.castShadow = true;
-            rabbitGroup.add(body);
+            shell.position.y = 0.4;
+            shell.castShadow = true;
+            turtleGroup.add(shell);
             
-            // Rabbit head
-            const head = new THREE.Mesh(
-                new THREE.SphereGeometry(0.25, 8, 6),
-                new THREE.MeshLambertMaterial({ color: 0xf5f5f5 })
-            );
-            head.position.set(0, 0.8, 0.3);
-            head.castShadow = true;
-            rabbitGroup.add(head);
-            
-            // Ears
-            for (let i = 0; i < 2; i++) {
-                const ear = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.08, 6, 8).scale(0.5, 2, 0.3),
-                    new THREE.MeshLambertMaterial({ color: 0xf0f0f0 })
+            // Shell pattern (hexagonal segments)
+            const shellPatternColor = isBoy ? 0x006400 : 0x32cd32; // Darker/lighter pattern
+            for (let i = 0; i < 6; i++) {
+                const segment = new THREE.Mesh(
+                    new THREE.RingGeometry(0.1, 0.25, 6),
+                    new THREE.MeshLambertMaterial({ color: shellPatternColor })
                 );
-                ear.position.set((i === 0 ? -0.1 : 0.1), 1.1, 0.25);
-                ear.rotation.z = (i === 0 ? 0.2 : -0.2);
-                ear.castShadow = true;
-                rabbitGroup.add(ear);
+                const angle = (i / 6) * Math.PI * 2;
+                segment.position.set(
+                    Math.cos(angle) * 0.3,
+                    0.65,
+                    Math.sin(angle) * 0.3
+                );
+                segment.rotation.x = -Math.PI / 2;
+                turtleGroup.add(segment);
+            }
+            
+            // Center shell pattern
+            const centerPattern = new THREE.Mesh(
+                new THREE.CircleGeometry(0.15, 6),
+                new THREE.MeshLambertMaterial({ color: shellPatternColor })
+            );
+            centerPattern.position.set(0, 0.65, 0);
+            centerPattern.rotation.x = -Math.PI / 2;
+            turtleGroup.add(centerPattern);
+            
+            // Turtle head
+            const headColor = isBoy ? 0x32cd32 : 0x98fb98; // Green for boy, light green for girl
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.2, 8, 6).scale(1, 0.8, 1.3),
+                new THREE.MeshLambertMaterial({ color: headColor })
+            );
+            head.position.set(0, 0.25, 0.7);
+            head.castShadow = true;
+            turtleGroup.add(head);
+            
+            // Eyes
+            for (let i = 0; i < 2; i++) {
+                const eye = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.04),
+                    new THREE.MeshLambertMaterial({ color: 0x000000 })
+                );
+                eye.position.set((i === 0 ? -0.08 : 0.08), 0.3, 0.85);
+                turtleGroup.add(eye);
+                
+                // Eye highlights
+                const highlight = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.015),
+                    new THREE.MeshLambertMaterial({ color: 0xffffff })
+                );
+                highlight.position.set((i === 0 ? -0.06 : 0.1), 0.32, 0.87);
+                turtleGroup.add(highlight);
+            }
+            
+            // Nose/beak
+            const nose = new THREE.Mesh(
+                new THREE.SphereGeometry(0.02),
+                new THREE.MeshLambertMaterial({ color: 0x654321 })
+            );
+            nose.position.set(0, 0.24, 0.95);
+            turtleGroup.add(nose);
+            
+            // Four legs
+            for (let i = 0; i < 4; i++) {
+                const leg = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.06, 0.2),
+                    new THREE.MeshLambertMaterial({ color: headColor })
+                );
+                leg.position.set(
+                    (i % 2 === 0 ? -0.4 : 0.4),
+                    0.1,
+                    (i < 2 ? 0.3 : -0.3)
+                );
+                leg.castShadow = true;
+                turtleGroup.add(leg);
+                
+                // Feet
+                const foot = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.1, 6, 6).scale(1.2, 0.4, 1),
+                    new THREE.MeshLambertMaterial({ color: 0x556b2f })
+                );
+                foot.position.set(
+                    (i % 2 === 0 ? -0.4 : 0.4),
+                    0.02,
+                    (i < 2 ? 0.3 : -0.3)
+                );
+                foot.castShadow = true;
+                turtleGroup.add(foot);
             }
             
             // Tail
             const tail = new THREE.Mesh(
-                new THREE.SphereGeometry(0.08),
-                new THREE.MeshLambertMaterial({ color: 0xffffff })
+                new THREE.SphereGeometry(0.05, 6, 6).scale(0.8, 0.8, 1.5),
+                new THREE.MeshLambertMaterial({ color: headColor })
             );
-            tail.position.set(0, 0.5, -0.5);
+            tail.position.set(0, 0.2, -0.7);
             tail.castShadow = true;
-            rabbitGroup.add(tail);
+            turtleGroup.add(tail);
             
-            // Legs
-            for (let i = 0; i < 4; i++) {
-                const leg = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.04, 0.06, 0.2),
-                    new THREE.MeshLambertMaterial({ color: 0xf0f0f0 })
+            // Gender-specific accessories
+            if (isBoy) {
+                // Boy turtle gets a small blue bandana
+                const bandana = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.3, 0.3),
+                    new THREE.MeshLambertMaterial({ color: 0x4169e1 })
                 );
-                leg.position.set(
-                    (i % 2 === 0 ? -0.15 : 0.15),
-                    0.1,
-                    (i < 2 ? 0.2 : -0.2)
+                bandana.position.set(0, 0.35, 0.6);
+                bandana.rotation.x = -Math.PI / 3;
+                turtleGroup.add(bandana);
+            } else {
+                // Girl turtle gets a pink flower on her head
+                const flower = new THREE.Mesh(
+                    new THREE.CircleGeometry(0.08, 5),
+                    new THREE.MeshLambertMaterial({ color: 0xff69b4 })
                 );
-                leg.castShadow = true;
-                rabbitGroup.add(leg);
+                flower.position.set(0.1, 0.4, 0.7);
+                flower.rotation.x = -Math.PI / 2;
+                turtleGroup.add(flower);
+                
+                // Flower center
+                const flowerCenter = new THREE.Mesh(
+                    new THREE.CircleGeometry(0.03, 5),
+                    new THREE.MeshLambertMaterial({ color: 0xffff00 })
+                );
+                flowerCenter.position.set(0.1, 0.41, 0.7);
+                flowerCenter.rotation.x = -Math.PI / 2;
+                turtleGroup.add(flowerCenter);
             }
             
-            rabbitGroup.position.set(5, 0, 5);
-            rabbitGroup.userData.hopPhase = 0;
-            rabbitGroup.userData.moveDirection = Math.random() * Math.PI * 2;
-            rabbitGroup.userData.nextHopTime = 0;
-            rabbitGroup.userData.isHopping = false;
+            turtleGroup.position.set(x, y, z);
+            turtleGroup.userData.walkPhase = Math.random() * Math.PI * 2;
+            turtleGroup.userData.moveDirection = Math.random() * Math.PI * 2;
+            turtleGroup.userData.nextDirectionChange = 0;
+            turtleGroup.userData.isWalking = Math.random() < 0.5;
+            turtleGroup.userData.nextWalkChange = 0;
+            turtleGroup.userData.isBoy = isBoy;
             
-            scene.add(rabbitGroup);
-            rabbit = rabbitGroup;
+            return turtleGroup;
         }
         
         function createAtmosphericParticles() {
@@ -831,52 +928,72 @@
             Tone.Transport.start();
         }
         
-        function animateRabbit() {
-            if (!rabbit) return;
-            
+        function animateTurtles() {
             const time = Date.now() * 0.001;
             
-            // Hopping behavior
-            if (!rabbit.userData.isHopping && time > rabbit.userData.nextHopTime) {
-                rabbit.userData.isHopping = true;
-                rabbit.userData.hopPhase = 0;
-                rabbit.userData.nextHopTime = time + 2 + Math.random() * 4; // Next hop in 2-6 seconds
+            [boyTurtle, girlTurtle].forEach(turtle => {
+                if (!turtle) return;
                 
-                // Sometimes change direction
-                if (Math.random() < 0.3) {
-                    rabbit.userData.moveDirection += (Math.random() - 0.5) * Math.PI;
+                // Walking behavior - turtles walk slower and more deliberately
+                if (!turtle.userData.isWalking && time > turtle.userData.nextWalkChange) {
+                    turtle.userData.isWalking = true;
+                    turtle.userData.nextWalkChange = time + 3 + Math.random() * 4; // Walk for 3-7 seconds
+                } else if (turtle.userData.isWalking && time > turtle.userData.nextWalkChange) {
+                    turtle.userData.isWalking = false;
+                    turtle.userData.nextWalkChange = time + 2 + Math.random() * 3; // Rest for 2-5 seconds
                 }
-            }
-            
-            if (rabbit.userData.isHopping) {
-                rabbit.userData.hopPhase += 0.15;
                 
-                // Hop animation
-                const hopHeight = Math.sin(rabbit.userData.hopPhase) * 0.5;
-                rabbit.position.y = Math.max(0, hopHeight);
+                // Direction change
+                if (time > turtle.userData.nextDirectionChange) {
+                    turtle.userData.moveDirection += (Math.random() - 0.5) * Math.PI * 0.5;
+                    turtle.userData.nextDirectionChange = time + 5 + Math.random() * 10; // Change direction every 5-15 seconds
+                }
                 
-                // Move forward during hop
-                if (rabbit.userData.hopPhase < Math.PI) {
-                    const moveDistance = 0.02;
-                    rabbit.position.x += Math.cos(rabbit.userData.moveDirection) * moveDistance;
-                    rabbit.position.z += Math.sin(rabbit.userData.moveDirection) * moveDistance;
+                if (turtle.userData.isWalking) {
+                    turtle.userData.walkPhase += 0.08; // Slow walking animation
                     
-                    // Keep rabbit in reasonable bounds
-                    const distanceFromOrigin = Math.sqrt(rabbit.position.x * rabbit.position.x + rabbit.position.z * rabbit.position.z);
-                    if (distanceFromOrigin > 30) {
-                        rabbit.userData.moveDirection += Math.PI; // Turn around
+                    // Head bobbing while walking
+                    const head = turtle.children.find(child => 
+                        child.position.z > 0.5 && child.geometry && child.geometry.type === 'SphereGeometry'
+                    );
+                    if (head) {
+                        head.position.y = 0.25 + Math.sin(turtle.userData.walkPhase * 2) * 0.02;
+                        head.rotation.y = Math.sin(turtle.userData.walkPhase) * 0.1;
+                    }
+                    
+                    // Shell bobbing
+                    const shell = turtle.children.find(child => 
+                        child.position.y > 0.3 && child.geometry && child.geometry.type === 'SphereGeometry'
+                    );
+                    if (shell) {
+                        shell.position.y = 0.4 + Math.sin(turtle.userData.walkPhase * 1.5) * 0.01;
+                    }
+                    
+                    // Move forward slowly
+                    const moveDistance = 0.008; // Very slow turtle movement
+                    turtle.position.x += Math.cos(turtle.userData.moveDirection) * moveDistance;
+                    turtle.position.z += Math.sin(turtle.userData.moveDirection) * moveDistance;
+                    
+                    // Keep turtles in reasonable bounds
+                    const distanceFromOrigin = Math.sqrt(turtle.position.x * turtle.position.x + turtle.position.z * turtle.position.z);
+                    if (distanceFromOrigin > 25) {
+                        turtle.userData.moveDirection += Math.PI; // Turn around
+                    }
+                    
+                    // Rotate turtle to face movement direction
+                    turtle.rotation.y = turtle.userData.moveDirection + Math.PI;
+                } else {
+                    // When not walking, occasionally look around
+                    if (Math.random() < 0.01) {
+                        const head = turtle.children.find(child => 
+                            child.position.z > 0.5 && child.geometry && child.geometry.type === 'SphereGeometry'
+                        );
+                        if (head) {
+                            head.rotation.y = (Math.random() - 0.5) * 0.5;
+                        }
                     }
                 }
-                
-                // End hop
-                if (rabbit.userData.hopPhase >= Math.PI) {
-                    rabbit.userData.isHopping = false;
-                    rabbit.position.y = 0;
-                }
-                
-                // Rotate rabbit to face movement direction
-                rabbit.rotation.y = rabbit.userData.moveDirection + Math.PI;
-            }
+            });
         }
         
         function setupControls() {
@@ -1071,8 +1188,8 @@
                 }
             });
             
-            // Animate rabbit
-            animateRabbit();
+            // Animate turtles
+            animateTurtles();
             
             renderer.render(scene, camera);
         }
@@ -1134,7 +1251,7 @@
                 await renderer.xr.setSession(session);
                 console.log('VR session started successfully!');
                 
-                vrMessage.innerHTML = '🌿 <strong>Welcome to the natural world!</strong><br>• Use thumbsticks to move around<br>• Follow the stream<br>• Watch for the rabbit<br>• Look up at the clouds!';
+                vrMessage.innerHTML = '🌿 <strong>Welcome to the natural world!</strong><br>• Use thumbsticks to move around<br>• Follow the stream<br>• Watch for the turtle couple<br>• Look up at the clouds!';
                 setTimeout(() => vrStatus.style.display = 'none', 4000);
                 
                 // Auto-enable audio in VR if not already enabled
