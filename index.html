@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natural VR Environment</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #98D8E8 100%);
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        #ui h2 {
+            margin-top: 0;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 8px 0;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        #audioButton {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        #vrButton {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            font-size: 16px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        #vrStatus {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,0,0,0.9);
+            padding: 30px;
+            border-radius: 15px;
+            display: none;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 400px;
+        }
+        
+        #loadingIndicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 20px;
+            display: block;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 450px;
+            backdrop-filter: blur(10px);
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .section-title {
+            color: #4ecdc4;
+            font-weight: bold;
+            margin-top: 12px;
+            margin-bottom: 6px;
+        }
+        
+        .feature-highlight {
+            color: #44a08d;
+            font-weight: bold;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid #4ecdc4;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>🌿 Natural VR World</h2>
+        <button id="audioButton" onclick="toggleAudio()">🔊 Enable Nature Sounds</button>
+        <button id="vrButton" onclick="enterVR()">🥽 Enter VR Experience</button>
+        
+        <div style="margin-top: 15px; font-size: 12px; opacity: 0.8;">
+            Explore a peaceful natural environment with streams, clouds, and wildlife.
+        </div>
+    </div>
+    
+    <div id="loadingIndicator">
+        <h3>🌿 Loading Natural World...</h3>
+        <div class="loading-spinner"></div>
+        <p>Creating your peaceful environment...</p>
+    </div>
+    
+    <div id="vrStatus">
+        <h3>VR Status</h3>
+        <p id="vrMessage">Checking VR support...</p>
+    </div>
+    
+    <div id="instructions">
+        <div class="section-title">🖥️ Desktop Controls:</div>
+        • W/↑ to move forward, S/↓ to move backward<br>
+        • A/← to move left, D/→ to move right<br>
+        • Q to rotate counter-clockwise, E to rotate clockwise<br>
+        • Mouse look available (click to enable, much gentler)<br><br>
+        
+        <div class="section-title">🥽 VR Controls:</div>
+        • <span class="feature-highlight">Right Thumbstick</span>: Move forward/back/left/right<br>
+        • <span class="feature-highlight">Left Thumbstick</span>: Turn and look around<br>
+        • Natural head movement for immersive exploration<br><br>
+        
+        <div class="section-title">🌿 Natural Features:</div>
+        • <span class="feature-highlight">Flowing Stream</span>: Follow the water through the landscape<br>
+        • <span class="feature-highlight">Dynamic Clouds</span>: Watch clouds drift across the sky<br>
+        • <span class="feature-highlight">Wildlife</span>: Spot the rabbit hopping around<br>
+        • <span class="feature-highlight">Nature Sounds</span>: Water, wind, and bird songs
+    </div>
+
+    <script>
+        // Global variables
+        let scene, camera, renderer;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        let controller1, controller2, controllerGrip1, controllerGrip2;
+        let vrMovement = { x: 0, z: 0 };
+        let dolly, cameraRig;
+        let audioContext, audioEnabled = false;
+        let windSound, waterSound, birdSounds = [];
+        let raycaster = new THREE.Raycaster();
+        let tempMatrix = new THREE.Matrix4();
+        let isInitialized = false;
+        let clouds = [], streamPoints = [], rabbit;
+        let environmentObjects = [];
+        
+        // Loading management
+        function hideLoadingIndicator() {
+            const loadingEl = document.getElementById('loadingIndicator');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        function showLoadingIndicator(message = 'Loading...') {
+            const loadingEl = document.getElementById('loadingIndicator');
+            if (loadingEl) {
+                loadingEl.innerHTML = '<h3>🌿 ' + message + '</h3><div class="loading-spinner"></div><p>Creating your peaceful environment...</p>';
+                loadingEl.style.display = 'block';
+            }
+        }
+        
+        // Initialize everything
+        async function init() {
+            try {
+                console.log('Starting initialization...');
+                showLoadingIndicator('Initializing Natural Environment');
+                
+                // Create scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x87CEEB);
+                scene.fog = new THREE.Fog(0x87CEEB, 10, 150);
+                
+                // Create camera
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.set(0, 2, 10);
+                
+                // Enhanced renderer
+                renderer = new THREE.WebGLRenderer({ 
+                    antialias: true,
+                    alpha: true,
+                    powerPreference: "high-performance"
+                });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.xr.enabled = true;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.outputEncoding = THREE.sRGBEncoding;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.0;
+                
+                document.body.appendChild(renderer.domElement);
+                
+                // Setup lighting
+                setupLighting();
+                
+                // Create natural environment
+                createTerrain();
+                createStream();
+                createClouds();
+                createTrees();
+                createRabbit();
+                createAtmosphericParticles();
+                
+                // Setup VR controllers
+                setupVRControllers();
+                
+                // Setup desktop controls
+                setupControls();
+                
+                // Start animation loop
+                renderer.setAnimationLoop(animate);
+                
+                // Check VR support
+                await checkVRSupport();
+                
+                isInitialized = true;
+                hideLoadingIndicator();
+                
+                console.log('Initialization complete!');
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                const loadingEl = document.getElementById('loadingIndicator');
+                if (loadingEl) {
+                    loadingEl.innerHTML = '<h3>❌ Loading Error</h3><p>Please refresh and try again. Error: ' + error.message + '</p>';
+                }
+            }
+        }
+        
+        function setupLighting() {
+            // Ambient light for natural illumination
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            
+            // Sun (main directional light)
+            const sun = new THREE.DirectionalLight(0xfff8dc, 0.8);
+            sun.position.set(50, 100, 30);
+            sun.castShadow = true;
+            sun.shadow.camera.left = -80;
+            sun.shadow.camera.right = 80;
+            sun.shadow.camera.top = 80;
+            sun.shadow.camera.bottom = -80;
+            sun.shadow.camera.near = 0.1;
+            sun.shadow.camera.far = 200;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            scene.add(sun);
+            
+            // Soft fill lighting
+            const fillLight = new THREE.DirectionalLight(0x87CEEB, 0.3);
+            fillLight.position.set(-30, 20, -30);
+            scene.add(fillLight);
+        }
+        
+        function createTerrain() {
+            // Create flat solid green ground base
+            const groundGeometry = new THREE.PlaneGeometry(100, 100);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x3a5f3a });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Add detailed grass patches with varying colors on top
+            const grassColors = [0x2d4a2d, 0x3a5f3a, 0x4a7c4a, 0x5a8f5a];
+            for (let i = 0; i < 60; i++) {
+                const grassPatch = new THREE.Mesh(
+                    new THREE.PlaneGeometry(3 + Math.random() * 2, 3 + Math.random() * 2),
+                    new THREE.MeshLambertMaterial({ 
+                        color: grassColors[Math.floor(Math.random() * grassColors.length)],
+                        transparent: true,
+                        opacity: 0.6
+                    })
+                );
+                grassPatch.rotation.x = -Math.PI / 2;
+                grassPatch.position.set(
+                    (Math.random() - 0.5) * 90,
+                    0.02,
+                    (Math.random() - 0.5) * 90
+                );
+                scene.add(grassPatch);
+                environmentObjects.push(grassPatch);
+            }
+            
+            // Add rocks scattered around
+            const rockColors = [0x4a4a4a, 0x5a5a5a, 0x3a3a3a, 0x6a6a6a];
+            for (let i = 0; i < 25; i++) {
+                const rockSize = 0.3 + Math.random() * 0.8;
+                const rock = new THREE.Mesh(
+                    new THREE.SphereGeometry(rockSize, 8, 6).scale(
+                        1 + Math.random() * 0.5, 
+                        0.5 + Math.random() * 0.5, 
+                        1 + Math.random() * 0.5
+                    ),
+                    new THREE.MeshLambertMaterial({ 
+                        color: rockColors[Math.floor(Math.random() * rockColors.length)]
+                    })
+                );
+                
+                rock.position.set(
+                    (Math.random() - 0.5) * 90,
+                    rockSize * 0.3,
+                    (Math.random() - 0.5) * 90
+                );
+                rock.castShadow = true;
+                rock.receiveShadow = true;
+                scene.add(rock);
+                environmentObjects.push(rock);
+            }
+            
+            // Add small water puddles
+            for (let i = 0; i < 8; i++) {
+                const puddle = new THREE.Mesh(
+                    new THREE.CircleGeometry(1 + Math.random() * 2, 16),
+                    new THREE.MeshPhongMaterial({ 
+                        color: 0x4a90e2,
+                        transparent: true,
+                        opacity: 0.7,
+                        shininess: 100
+                    })
+                );
+                puddle.rotation.x = -Math.PI / 2;
+                puddle.position.set(
+                    (Math.random() - 0.5) * 60,
+                    0.01,
+                    (Math.random() - 0.5) * 60
+                );
+                scene.add(puddle);
+                environmentObjects.push(puddle);
+            }
+            
+            // Add small bushes
+            for (let i = 0; i < 15; i++) {
+                const bush = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.5 + Math.random() * 0.5, 8, 6).scale(
+                        1 + Math.random() * 0.3, 
+                        0.6 + Math.random() * 0.4, 
+                        1 + Math.random() * 0.3
+                    ),
+                    new THREE.MeshLambertMaterial({ color: 0x2d5016 })
+                );
+                
+                bush.position.set(
+                    (Math.random() - 0.5) * 85,
+                    0.3,
+                    (Math.random() - 0.5) * 85
+                );
+                bush.castShadow = true;
+                bush.receiveShadow = true;
+                scene.add(bush);
+                environmentObjects.push(bush);
+            }
+        }
+        
+        function createStream() {
+            // Create a winding stream path
+            const streamPath = new THREE.CurvePath();
+            const points = [];
+            
+            // Generate curved stream path
+            for (let i = 0; i < 8; i++) {
+                const t = i / 7;
+                const x = -60 + t * 120 + Math.sin(t * Math.PI * 3) * 20;
+                const z = -40 + t * 80 + Math.cos(t * Math.PI * 2) * 15;
+                points.push(new THREE.Vector3(x, 0.1, z));
+            }
+            
+            // Create stream segments
+            for (let i = 0; i < points.length - 1; i++) {
+                const start = points[i];
+                const end = points[i + 1];
+                const curve = new THREE.LineCurve3(start, end);
+                streamPath.add(curve);
+            }
+            
+            // Create stream geometry
+            const streamGeometry = new THREE.TubeGeometry(streamPath, 100, 2, 8, false);
+            const streamMaterial = new THREE.MeshPhongMaterial({
+                color: 0x4a90e2,
+                transparent: true,
+                opacity: 0.8,
+                shininess: 100,
+                side: THREE.DoubleSide
+            });
+            
+            const stream = new THREE.Mesh(streamGeometry, streamMaterial);
+            stream.receiveShadow = true;
+            scene.add(stream);
+            
+            // Add stream sparkles
+            for (let i = 0; i < 50; i++) {
+                const sparkle = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05),
+                    new THREE.MeshBasicMaterial({
+                        color: 0xffffff,
+                        transparent: true,
+                        opacity: 0.8
+                    })
+                );
+                
+                const t = Math.random();
+                const point = streamPath.getPoint(t);
+                sparkle.position.copy(point);
+                sparkle.position.y += 0.1;
+                sparkle.position.x += (Math.random() - 0.5) * 3;
+                sparkle.position.z += (Math.random() - 0.5) * 3;
+                
+                sparkle.userData.streamSparkle = true;
+                sparkle.userData.phase = Math.random() * Math.PI * 2;
+                
+                scene.add(sparkle);
+                streamPoints.push(sparkle);
+            }
+        }
+        
+        function createClouds() {
+            for (let i = 0; i < 12; i++) {
+                const cloudGroup = new THREE.Group();
+                
+                // Create cloud from multiple spheres
+                const cloudSizes = [1.5, 2, 1.8, 1.2, 1.6];
+                const cloudPositions = [
+                    [0, 0, 0], [1.5, 0.2, 0.5], [-1.2, 0.1, -0.3],
+                    [0.8, -0.1, -0.8], [-0.5, 0.3, 0.8]
+                ];
+                
+                cloudSizes.forEach((size, index) => {
+                    const cloudPart = new THREE.Mesh(
+                        new THREE.SphereGeometry(size, 8, 6),
+                        new THREE.MeshLambertMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.8
+                        })
+                    );
+                    
+                    const pos = cloudPositions[index];
+                    cloudPart.position.set(pos[0], pos[1], pos[2]);
+                    cloudGroup.add(cloudPart);
+                });
+                
+                // Position clouds in sky
+                const angle = (i / 12) * Math.PI * 2;
+                const distance = 40 + Math.random() * 40;
+                cloudGroup.position.set(
+                    Math.cos(angle) * distance,
+                    15 + Math.random() * 10,
+                    Math.sin(angle) * distance
+                );
+                
+                cloudGroup.userData.driftSpeed = 0.01 + Math.random() * 0.01;
+                cloudGroup.userData.driftDirection = Math.random() * Math.PI * 2;
+                
+                scene.add(cloudGroup);
+                clouds.push(cloudGroup);
+            }
+        }
+        
+        function createTrees() {
+            // Create various trees around the environment
+            for (let i = 0; i < 25; i++) {
+                const treeGroup = new THREE.Group();
+                
+                // Tree trunk
+                const trunkHeight = 3 + Math.random() * 4;
+                const trunk = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.3, 0.4, trunkHeight),
+                    new THREE.MeshLambertMaterial({ color: 0x4a4a2a })
+                );
+                trunk.position.y = trunkHeight / 2;
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+                
+                // Tree canopy
+                const canopySize = 2 + Math.random() * 2;
+                const canopy = new THREE.Mesh(
+                    new THREE.SphereGeometry(canopySize, 8, 6).scale(
+                        1 + Math.random() * 0.3,
+                        0.8 + Math.random() * 0.4,
+                        1 + Math.random() * 0.3
+                    ),
+                    new THREE.MeshLambertMaterial({ 
+                        color: new THREE.Color().setHSL(0.25, 0.7, 0.2 + Math.random() * 0.3)
+                    })
+                );
+                canopy.position.y = trunkHeight + canopySize * 0.3;
+                canopy.castShadow = true;
+                treeGroup.add(canopy);
+                
+                // Position trees around the environment
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 15 + Math.random() * 70;
+                treeGroup.position.set(
+                    Math.cos(angle) * distance,
+                    0,
+                    Math.sin(angle) * distance
+                );
+                
+                treeGroup.userData.swayPhase = Math.random() * Math.PI * 2;
+                
+                scene.add(treeGroup);
+                environmentObjects.push(treeGroup);
+            }
+        }
+        
+        function createRabbit() {
+            const rabbitGroup = new THREE.Group();
+            
+            // Rabbit body
+            const body = new THREE.Mesh(
+                new THREE.SphereGeometry(0.4, 8, 6).scale(1, 0.8, 1.3),
+                new THREE.MeshLambertMaterial({ color: 0xf0f0f0 })
+            );
+            body.position.y = 0.4;
+            body.castShadow = true;
+            rabbitGroup.add(body);
+            
+            // Rabbit head
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.25, 8, 6),
+                new THREE.MeshLambertMaterial({ color: 0xf5f5f5 })
+            );
+            head.position.set(0, 0.8, 0.3);
+            head.castShadow = true;
+            rabbitGroup.add(head);
+            
+            // Ears
+            for (let i = 0; i < 2; i++) {
+                const ear = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.08, 6, 8).scale(0.5, 2, 0.3),
+                    new THREE.MeshLambertMaterial({ color: 0xf0f0f0 })
+                );
+                ear.position.set((i === 0 ? -0.1 : 0.1), 1.1, 0.25);
+                ear.rotation.z = (i === 0 ? 0.2 : -0.2);
+                ear.castShadow = true;
+                rabbitGroup.add(ear);
+            }
+            
+            // Tail
+            const tail = new THREE.Mesh(
+                new THREE.SphereGeometry(0.08),
+                new THREE.MeshLambertMaterial({ color: 0xffffff })
+            );
+            tail.position.set(0, 0.5, -0.5);
+            tail.castShadow = true;
+            rabbitGroup.add(tail);
+            
+            // Legs
+            for (let i = 0; i < 4; i++) {
+                const leg = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.04, 0.06, 0.2),
+                    new THREE.MeshLambertMaterial({ color: 0xf0f0f0 })
+                );
+                leg.position.set(
+                    (i % 2 === 0 ? -0.15 : 0.15),
+                    0.1,
+                    (i < 2 ? 0.2 : -0.2)
+                );
+                leg.castShadow = true;
+                rabbitGroup.add(leg);
+            }
+            
+            rabbitGroup.position.set(5, 0, 5);
+            rabbitGroup.userData.hopPhase = 0;
+            rabbitGroup.userData.moveDirection = Math.random() * Math.PI * 2;
+            rabbitGroup.userData.nextHopTime = 0;
+            rabbitGroup.userData.isHopping = false;
+            
+            scene.add(rabbitGroup);
+            rabbit = rabbitGroup;
+        }
+        
+        function createAtmosphericParticles() {
+            // Floating particles for atmosphere
+            const particleCount = 60;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                positions[i3] = (Math.random() - 0.5) * 100;
+                positions[i3 + 1] = Math.random() * 20 + 2;
+                positions[i3 + 2] = (Math.random() - 0.5) * 100;
+                
+                // Subtle natural colors
+                const hue = 0.1 + Math.random() * 0.3; // Yellow to green range
+                const color = new THREE.Color().setHSL(hue, 0.3, 0.8);
+                colors[i3] = color.r;
+                colors[i3 + 1] = color.g;
+                colors[i3 + 2] = color.b;
+            }
+            
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const particleSystem = new THREE.Points(particles, particleMaterial);
+            scene.add(particleSystem);
+            environmentObjects.push(particleSystem);
+        }
+        
+        async function checkVRSupport() {
+            const vrMessage = document.getElementById('vrMessage');
+            const vrStatus = document.getElementById('vrStatus');
+            
+            if (!navigator.xr) {
+                vrMessage.innerHTML = '❌ WebXR not supported.<br>Please use the <strong>Meta Quest Browser</strong> for VR experience.';
+                vrStatus.style.display = 'block';
+                setTimeout(() => vrStatus.style.display = 'none', 5000);
+                return;
+            }
+            
+            try {
+                const supported = await navigator.xr.isSessionSupported('immersive-vr');
+                if (supported) {
+                    vrMessage.innerHTML = '✅ <strong>VR Ready!</strong><br>Put on your Quest and click "Enter VR Experience"';
+                    document.getElementById('vrButton').style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+                } else {
+                    vrMessage.innerHTML = 'VR device not detected.<br>Desktop mode available with full features.';
+                }
+                vrStatus.style.display = 'block';
+                setTimeout(() => vrStatus.style.display = 'none', 4000);
+            } catch (error) {
+                console.error('VR check error:', error);
+                vrMessage.innerHTML = 'VR check failed.<br>Desktop mode available.';
+                vrStatus.style.display = 'block';
+                setTimeout(() => vrStatus.style.display = 'none', 4000);
+            }
+        }
+        
+        function setupVRControllers() {
+            // Camera rig for VR
+            cameraRig = new THREE.Group();
+            cameraRig.position.set(0, 0, 10);
+            scene.add(cameraRig);
+            
+            dolly = new THREE.Group();
+            cameraRig.add(dolly);
+            dolly.add(camera);
+            
+            // Controllers
+            controller1 = renderer.xr.getController(0);
+            dolly.add(controller1);
+            
+            controller2 = renderer.xr.getController(1);
+            dolly.add(controller2);
+            
+            // Controller grips
+            controllerGrip1 = renderer.xr.getControllerGrip(0);
+            dolly.add(controllerGrip1);
+            
+            controllerGrip2 = renderer.xr.getControllerGrip(1);
+            dolly.add(controllerGrip2);
+        }
+        
+        function handleVRMovement() {
+            if (!renderer.xr.isPresenting) return;
+            
+            const session = renderer.xr.getSession();
+            if (!session || !session.inputSources) return;
+            
+            vrMovement.x = 0;
+            vrMovement.z = 0;
+            
+            for (let i = 0; i < session.inputSources.length; i++) {
+                const inputSource = session.inputSources[i];
+                const gamepad = inputSource.gamepad;
+                
+                if (!gamepad || gamepad.axes.length < 4) continue;
+                
+                if (inputSource.handedness === 'right') {
+                    const thumbstickX = gamepad.axes[2];
+                    const thumbstickY = gamepad.axes[3];
+                    
+                    if (Math.abs(thumbstickX) > 0.15) vrMovement.x = -thumbstickX * 0.08;
+                    if (Math.abs(thumbstickY) > 0.15) vrMovement.z = thumbstickY * 0.08;
+                }
+                
+                if (inputSource.handedness === 'left') {
+                    const rotateX = gamepad.axes[2];
+                    
+                    if (Math.abs(rotateX) > 0.15) {
+                        cameraRig.rotation.y += rotateX * 0.03;
+                    }
+                }
+            }
+            
+            if (Math.abs(vrMovement.x) > 0.01 || Math.abs(vrMovement.z) > 0.01) {
+                const moveVector = new THREE.Vector3(vrMovement.x, 0, vrMovement.z);
+                moveVector.applyQuaternion(cameraRig.quaternion);
+                cameraRig.position.add(moveVector);
+            }
+        }
+        
+        async function toggleAudio() {
+            const audioButton = document.getElementById('audioButton');
+            
+            if (!audioEnabled) {
+                try {
+                    await Tone.start();
+                    audioEnabled = true;
+                    audioButton.textContent = '🔇 Disable Nature Sounds';
+                    
+                    createNatureSounds();
+                    
+                } catch (error) {
+                    console.error('Failed to enable audio:', error);
+                }
+            } else {
+                Tone.Transport.stop();
+                audioEnabled = false;
+                audioButton.textContent = '🔊 Enable Nature Sounds';
+            }
+        }
+        
+        function createNatureSounds() {
+            // Wind sound
+            const windNoise = new Tone.Noise("pink").start();
+            const windFilter = new Tone.Filter(300, "lowpass").toDestination();
+            const windAutoFilter = new Tone.AutoFilter(0.05).connect(windFilter);
+            windNoise.connect(windAutoFilter);
+            windNoise.volume.value = -40;
+            
+            // Water flowing sound
+            const waterNoise = new Tone.Noise("white").start();
+            const waterFilter = new Tone.Filter(800, "lowpass").toDestination();
+            const waterReverb = new Tone.Reverb(2).connect(waterFilter);
+            waterNoise.connect(waterReverb);
+            waterNoise.volume.value = -35;
+            
+            // Bird sounds
+            const birdTypes = [
+                { notes: ['C5', 'E5', 'G5'], interval: 8 },
+                { notes: ['F5', 'A5', 'C6'], interval: 12 },
+                { notes: ['D5', 'F#5', 'A5'], interval: 15 }
+            ];
+            
+            birdTypes.forEach((birdType, index) => {
+                const synth = new Tone.Synth({
+                    oscillator: { type: "sine" },
+                    envelope: {
+                        attack: 0.02,
+                        decay: 0.1,
+                        sustain: 0.1,
+                        release: 0.4
+                    }
+                });
+                
+                const reverb = new Tone.Reverb(3).toDestination();
+                synth.connect(reverb);
+                synth.volume.value = -32;
+                
+                const pattern = new Tone.Pattern((time, note) => {
+                    synth.triggerAttackRelease(note, "8n", time);
+                }, birdType.notes, "random");
+                
+                pattern.start(Math.random() * 5);
+                pattern.interval = birdType.interval + Math.random() * 8;
+                
+                birdSounds.push({ synth, pattern, reverb });
+            });
+            
+            Tone.Transport.start();
+        }
+        
+        function animateRabbit() {
+            if (!rabbit) return;
+            
+            const time = Date.now() * 0.001;
+            
+            // Hopping behavior
+            if (!rabbit.userData.isHopping && time > rabbit.userData.nextHopTime) {
+                rabbit.userData.isHopping = true;
+                rabbit.userData.hopPhase = 0;
+                rabbit.userData.nextHopTime = time + 2 + Math.random() * 4; // Next hop in 2-6 seconds
+                
+                // Sometimes change direction
+                if (Math.random() < 0.3) {
+                    rabbit.userData.moveDirection += (Math.random() - 0.5) * Math.PI;
+                }
+            }
+            
+            if (rabbit.userData.isHopping) {
+                rabbit.userData.hopPhase += 0.15;
+                
+                // Hop animation
+                const hopHeight = Math.sin(rabbit.userData.hopPhase) * 0.5;
+                rabbit.position.y = Math.max(0, hopHeight);
+                
+                // Move forward during hop
+                if (rabbit.userData.hopPhase < Math.PI) {
+                    const moveDistance = 0.02;
+                    rabbit.position.x += Math.cos(rabbit.userData.moveDirection) * moveDistance;
+                    rabbit.position.z += Math.sin(rabbit.userData.moveDirection) * moveDistance;
+                    
+                    // Keep rabbit in reasonable bounds
+                    const distanceFromOrigin = Math.sqrt(rabbit.position.x * rabbit.position.x + rabbit.position.z * rabbit.position.z);
+                    if (distanceFromOrigin > 30) {
+                        rabbit.userData.moveDirection += Math.PI; // Turn around
+                    }
+                }
+                
+                // End hop
+                if (rabbit.userData.hopPhase >= Math.PI) {
+                    rabbit.userData.isHopping = false;
+                    rabbit.position.y = 0;
+                }
+                
+                // Rotate rabbit to face movement direction
+                rabbit.rotation.y = rabbit.userData.moveDirection + Math.PI;
+            }
+        }
+        
+        function setupControls() {
+            let rotateLeft = false, rotateRight = false;
+            
+            const onKeyDown = function(event) {
+                switch(event.code) {
+                    case 'ArrowUp':
+                    case 'KeyW':
+                        moveForward = true;
+                        break;
+                    case 'ArrowLeft':
+                    case 'KeyA':
+                        moveLeft = true;
+                        break;
+                    case 'ArrowDown':
+                    case 'KeyS':
+                        moveBackward = true;
+                        break;
+                    case 'ArrowRight':
+                    case 'KeyD':
+                        moveRight = true;
+                        break;
+                    case 'KeyQ':
+                        rotateLeft = true;
+                        break;
+                    case 'KeyE':
+                        rotateRight = true;
+                        break;
+                }
+            };
+            
+            const onKeyUp = function(event) {
+                switch(event.code) {
+                    case 'ArrowUp':
+                    case 'KeyW':
+                        moveForward = false;
+                        break;
+                    case 'ArrowLeft':
+                    case 'KeyA':
+                        moveLeft = false;
+                        break;
+                    case 'ArrowDown':
+                    case 'KeyS':
+                        moveBackward = false;
+                        break;
+                    case 'ArrowRight':
+                    case 'KeyD':
+                        moveRight = false;
+                        break;
+                    case 'KeyQ':
+                        rotateLeft = false;
+                        break;
+                    case 'KeyE':
+                        rotateRight = false;
+                        break;
+                }
+            };
+            
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            
+            // Store rotation controls globally for use in animate function
+            window.rotateLeft = rotateLeft;
+            window.rotateRight = rotateRight;
+            window.updateRotationControls = function() {
+                window.rotateLeft = rotateLeft;
+                window.rotateRight = rotateRight;
+            };
+            
+            // Update rotation controls continuously
+            setInterval(() => {
+                window.rotateLeft = rotateLeft;
+                window.rotateRight = rotateRight;
+            }, 16);
+            
+            // Optional: Keep mouse look but make it much less sensitive and only when clicked
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (event) => {
+                if (document.pointerLockElement === renderer.domElement) {
+                    mouseX += event.movementX * 0.0005; // Much less sensitive
+                    mouseY += event.movementY * 0.0005; // Much less sensitive
+                    mouseY = Math.max(-Math.PI/2, Math.min(Math.PI/2, mouseY));
+                    
+                    camera.rotation.order = 'YXZ';
+                    camera.rotation.y = -mouseX;
+                    camera.rotation.x = -mouseY;
+                }
+            });
+            
+            renderer.domElement.addEventListener('click', () => {
+                renderer.domElement.requestPointerLock();
+            });
+        }
+        
+        function animate() {
+            handleVRMovement();
+            
+            // Desktop movement with intuitive controls
+            if (!renderer.xr.isPresenting) {
+                // Handle rotation with Q/E keys
+                if (window.rotateLeft) {
+                    camera.rotation.y += 0.02; // Counter-clockwise
+                }
+                if (window.rotateRight) {
+                    camera.rotation.y -= 0.02; // Clockwise
+                }
+                
+                // Handle movement - always relative to camera's current direction
+                const moveSpeed = 0.1;
+                
+                if (moveForward) {
+                    // Move forward in the direction camera is facing
+                    const forward = new THREE.Vector3();
+                    camera.getWorldDirection(forward);
+                    camera.position.addScaledVector(forward, moveSpeed);
+                }
+                
+                if (moveBackward) {
+                    // Move backward (opposite to camera direction)
+                    const forward = new THREE.Vector3();
+                    camera.getWorldDirection(forward);
+                    camera.position.addScaledVector(forward, -moveSpeed);
+                }
+                
+                if (moveLeft) {
+                    // Move left relative to camera direction
+                    const forward = new THREE.Vector3();
+                    camera.getWorldDirection(forward);
+                    const right = new THREE.Vector3();
+                    right.crossVectors(forward, camera.up).normalize();
+                    camera.position.addScaledVector(right, -moveSpeed);
+                }
+                
+                if (moveRight) {
+                    // Move right relative to camera direction
+                    const forward = new THREE.Vector3();
+                    camera.getWorldDirection(forward);
+                    const right = new THREE.Vector3();
+                    right.crossVectors(forward, camera.up).normalize();
+                    camera.position.addScaledVector(right, moveSpeed);
+                }
+            }
+            
+            const time = Date.now() * 0.001;
+            
+            // Animate clouds
+            clouds.forEach(cloud => {
+                cloud.position.x += Math.cos(cloud.userData.driftDirection) * cloud.userData.driftSpeed;
+                cloud.position.z += Math.sin(cloud.userData.driftDirection) * cloud.userData.driftSpeed;
+                cloud.rotation.y += 0.0005;
+                
+                // Reset cloud position if it drifts too far
+                const distance = Math.sqrt(cloud.position.x * cloud.position.x + cloud.position.z * cloud.position.z);
+                if (distance > 120) {
+                    const angle = Math.random() * Math.PI * 2;
+                    cloud.position.set(
+                        Math.cos(angle) * 40,
+                        cloud.position.y,
+                        Math.sin(angle) * 40
+                    );
+                }
+            });
+            
+            // Animate stream sparkles
+            streamPoints.forEach(sparkle => {
+                if (sparkle.userData.streamSparkle) {
+                    sparkle.userData.phase += 0.05;
+                    sparkle.material.opacity = 0.5 + Math.sin(sparkle.userData.phase) * 0.3;
+                    sparkle.position.y += Math.sin(sparkle.userData.phase * 2) * 0.002;
+                }
+            });
+            
+            // Animate trees swaying
+            environmentObjects.forEach(obj => {
+                if (obj.userData.swayPhase !== undefined) {
+                    obj.userData.swayPhase += 0.01;
+                    obj.rotation.z = Math.sin(obj.userData.swayPhase) * 0.02;
+                }
+            });
+            
+            // Animate atmospheric particles
+            environmentObjects.forEach(obj => {
+                if (obj.isPoints) {
+                    const positions = obj.geometry.attributes.position.array;
+                    for (let i = 0; i < positions.length; i += 3) {
+                        positions[i] += Math.sin(time * 0.2 + i * 0.01) * 0.005;
+                        positions[i + 1] += Math.sin(time * 0.3 + i * 0.02) * 0.003;
+                        positions[i + 2] += Math.cos(time * 0.2 + i * 0.015) * 0.005;
+                    }
+                    obj.geometry.attributes.position.needsUpdate = true;
+                }
+            });
+            
+            // Animate rabbit
+            animateRabbit();
+            
+            renderer.render(scene, camera);
+        }
+        
+        async function enterVR() {
+            const vrMessage = document.getElementById('vrMessage');
+            const vrStatus = document.getElementById('vrStatus');
+            
+            console.log('Attempting to enter VR...');
+            
+            if (!isInitialized) {
+                console.log('System not fully initialized yet');
+                vrMessage.innerHTML = '⏳ <strong>Please wait...</strong><br>The experience is still loading.<br>Try again in a moment.';
+                vrStatus.style.display = 'block';
+                setTimeout(() => vrStatus.style.display = 'none', 3000);
+                return;
+            }
+            
+            if (!navigator.xr) {
+                console.log('WebXR not supported');
+                vrMessage.innerHTML = '❌ WebXR not supported.<br><strong>Please use the Meta Quest Browser</strong><br>1. Open Quest Browser on your headset<br>2. Navigate to this page<br>3. Click "Enter VR Experience"';
+                vrStatus.style.display = 'block';
+                setTimeout(() => vrStatus.style.display = 'none', 8000);
+                return;
+            }
+            
+            try {
+                console.log('Checking VR session support...');
+                const supported = await navigator.xr.isSessionSupported('immersive-vr');
+                
+                if (!supported) {
+                    console.log('VR session not supported');
+                    vrMessage.innerHTML = '❌ <strong>VR not available</strong><br>Please make sure:<br>• You\'re using Meta Quest Browser<br>• WebXR is enabled<br>• Headset is properly connected';
+                    vrStatus.style.display = 'block';
+                    setTimeout(() => vrStatus.style.display = 'none', 8000);
+                    return;
+                }
+                
+                console.log('VR session supported, requesting session...');
+                vrMessage.innerHTML = '🥽 <strong>Starting VR session...</strong><br>Put on your headset and explore nature!';
+                vrStatus.style.display = 'block';
+                
+                const sessionInit = {
+                    requiredFeatures: ['local-floor']
+                };
+                
+                console.log('Requesting VR session with features:', sessionInit);
+                const session = await navigator.xr.requestSession('immersive-vr', sessionInit);
+                console.log('VR session obtained successfully');
+                
+                session.addEventListener('end', () => {
+                    console.log('VR session ended');
+                    vrMessage.innerHTML = '✨ <strong>VR session ended!</strong><br>Thanks for exploring the natural world!<br>You can restart anytime.';
+                    vrStatus.style.display = 'block';
+                    setTimeout(() => vrStatus.style.display = 'none', 5000);
+                });
+                
+                console.log('Setting renderer XR session...');
+                await renderer.xr.setSession(session);
+                console.log('VR session started successfully!');
+                
+                vrMessage.innerHTML = '🌿 <strong>Welcome to the natural world!</strong><br>• Use thumbsticks to move around<br>• Follow the stream<br>• Watch for the rabbit<br>• Look up at the clouds!';
+                setTimeout(() => vrStatus.style.display = 'none', 4000);
+                
+                // Auto-enable audio in VR if not already enabled
+                if (!audioEnabled) {
+                    try {
+                        console.log('Auto-enabling audio for VR...');
+                        await toggleAudio();
+                    } catch (e) {
+                        console.log('Audio auto-enable failed:', e);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('VR session error:', error);
+                vrMessage.innerHTML = '❌ <strong>VR failed to start</strong><br>Error: ' + error.message + '<br><br>Try:<br>• Refreshing the page<br>• Using Meta Quest Browser<br>• Checking headset connection';
+                vrStatus.style.display = 'block';
+                setTimeout(() => vrStatus.style.display = 'none', 10000);
+            }
+        }
+        
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
